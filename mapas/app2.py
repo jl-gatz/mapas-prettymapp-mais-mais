@@ -12,9 +12,35 @@ import matplotlib.pyplot as plt
 # --------------------------------------------------
 def create_map() -> folium.Map:
     """Create Folium map centered on default coordinates."""
-    map_obj = folium.Map(location=[-22.817159, -47.069743], zoom_start=10)
-    map_obj.add_child(folium.ClickForMarker())
-    map_obj.add_child(folium.ClickForLatLng(format_str='"[" + lat + "," + lng + "]"', alert=False))
+
+    # Cria o elemento da sessão do Streamlit
+    session = st.session_state
+
+    # Verifica se já existe um marcador
+    if "marker" not in session:
+        session.marker = None
+
+    # Cria o mapa base 
+    map_obj = folium.Map(
+        location=[-22.817159, -47.069743], 
+        zoom_start=15,
+        )
+
+    # Adiciona marcador salvo
+    if session.marker:
+        folium.Marker(session.marker).add_to(map_obj)
+    
+    # renderiza e captura eventos
+    # Solução idiota, zerei o tamanho
+    event = st_folium(map_obj, height=0, width=0)
+
+    # se o usuário clicou no mapa
+    if event.get("last_clicked"):
+        lat = event["last_clicked"]["lat"]
+        lng = event["last_clicked"]["lng"]
+        session.marker = (lat, lng)
+        st.rerun()
+
     return map_obj
 
 
@@ -84,6 +110,8 @@ def main():
                     with st.spinner("Aguarde o mapa ser criado...", show_time=True):
                         fig = plot_pretty_map(lat, lon, style_name)
                         if fig:
+                            # O espaço é por conta do outro mapa que foi escondido
+                            st.space(26)
                             st.pyplot(fig)
 
             except ValueError:
